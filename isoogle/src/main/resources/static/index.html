@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <title>isoogle</title>
+ <meta charset="UTF-8">
+ <style>
+     body {
+         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+         background-color: #f4f6f9;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         height: 100vh;
+         margin: 0;
+     }
+     .container {
+         background-color: #ffffff;
+         padding: 30px 40px;
+         border-radius: 10px;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+         max-width: 400px;
+         width: 100%;
+     }
+     h2 {
+         text-align: center;
+         color: #333333;
+         margin-bottom: 20px;
+     }
+     label {
+         display: block;
+         margin-top: 15px;
+         color: #555555;
+     }
+     input {
+         width: 100%;
+         padding: 12px 15px;
+         margin-top: 5px;
+         border: 1px solid #cccccc;
+         border-radius: 5px;
+         box-sizing: border-box;
+         font-size: 16px;
+     }
+     button {
+         width: 100%;
+         padding: 12px 15px;
+         margin-top: 20px;
+         background-color: #007BFF;
+         border: none;
+         border-radius: 5px;
+         color: #ffffff;
+         font-size: 16px;
+         cursor: pointer;
+         transition: background-color 0.3s ease;
+     }
+     button:hover {
+         background-color: #0056b3;
+     }
+     hr {
+         margin: 30px 0;
+         border: none;
+         border-top: 1px solid #eeeeee;
+     }
+     #apiResult {
+         margin-top: 20px;
+         font-size: 18px;
+         color: #333333;
+         text-align: center;
+     }
+ </style>
+</head>
+<body>
+<div class="container">
+
+ <p id="apiResult"></p>
+    <hr>
+
+    <h3>Google CSE 搜尋</h3>
+    <form id="cseForm">
+        <label for="cseQuery">搜尋關鍵字:</label>
+        <input type="text" id="cseQuery" name="query" required placeholder="輸入搜尋字詞，例如: Java">
+        <button type="button" onclick="callCseApi()">搜尋</button>
+    </form>
+
+    <div id="cseResults" style="margin-top:18px">
+        <!-- results will be injected here -->
+    </div>
+</div>
+
+<script>
+    function callCseApi() {
+        const q = document.getElementById('cseQuery').value;
+        if (!q) {
+            alert('請輸入搜尋關鍵字。');
+            return;
+        }
+
+        document.getElementById('cseResults').innerHTML = '搜尋中...';
+
+        fetch(`/api/cse?query=${encodeURIComponent(q)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('網路回應不是OK');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Expecting a JSON object where keys are titles and values are links
+                const container = document.getElementById('cseResults');
+                container.innerHTML = '';
+                if (!data || Object.keys(data).length === 0) {
+                    container.innerText = '沒有找到結果。';
+                    return;
+                }
+
+                const ul = document.createElement('ul');
+                ul.style.paddingLeft = '18px';
+                for (const [title, link] of Object.entries(data)) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.innerText = title;
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                }
+                container.appendChild(ul);
+            })
+            .catch(error => {
+                console.error('CSE Error:', error);
+                document.getElementById('cseResults').innerText = '搜尋失敗，請稍後再試。';
+            });
+    }
+
+</script>
+</body>
+</html>
