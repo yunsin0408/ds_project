@@ -9,7 +9,7 @@ A search engine that is tailored for International Organization of Standardizati
 ```bash
 # .env (example)
 export GOOGLE_CSE_APIKEY="your_api_key"
-export GOOGLE_CSE_CX="ypur_cse_id"
+export GOOGLE_CSE_CX="your_cse_id"
 ```
 
 2. Load the variables into your shell (zsh):
