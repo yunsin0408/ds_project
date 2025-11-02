@@ -8,8 +8,8 @@ A search engine that is tailored for International Organization of Standardizati
 
 ```bash
 # .env (example)
-export GOOGLE_CSE_APIKEY="AIzaSy...your_key_here"
-export GOOGLE_CSE_CX="371566471ab8044f9"
+export GOOGLE_CSE_APIKEY="your_api_key"
+export GOOGLE_CSE_CX="ypur_cse_id"
 ```
 
 2. Load the variables into your shell (zsh):
