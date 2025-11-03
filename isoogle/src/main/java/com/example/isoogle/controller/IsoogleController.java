@@ -29,7 +29,6 @@ public class IsoogleController {
             return ResponseEntity.ok(Collections.emptyMap());
         }
 
-        // Require CSE configuration;
         if (apiKey == null || apiKey.isEmpty() || cx == null || cx.isEmpty()) {
             return ResponseEntity.status(400)
                     .body(Collections.singletonMap("error", "CSE not configured: set google.cse.apiKey and google.cse.cx"));
@@ -37,7 +36,7 @@ public class IsoogleController {
 
         try {
             GoogleQuery gq = new GoogleQuery(query);
-            HashMap<String, String> results = gq.queryCse(query, apiKey, cx);
+            HashMap<String, String> results = gq.query(query, apiKey, cx);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             e.printStackTrace();
