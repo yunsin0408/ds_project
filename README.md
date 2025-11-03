@@ -1,29 +1,49 @@
+
 # Isoogle
 
-A search engine tailored for you International Organization of Standardization (ISO) needs.
+A search engine tailored for your ISO (International Organization of Standardization) needs.
 
-## Local development
+## Configuration 
 
-1. Create or edit the `.env` file in the project root with your secrets. Example:
+- Create an `.env` file.
 
-```bash
-# .env (example)
-export GOOGLE_CSE_APIKEY="your_api_key"
-export GOOGLE_CSE_CX="your_cse_id"
-```
+	Example `.env` (local development only):
 
-2. Load the variables into your shell (zsh):
+	```bash
+	# .env 
+	GOOGLE_CSE_APIKEY="your_api_key"
+	GOOGLE_CSE_CX="your_cse_id"
+	GOOGLE_CSE_ENABLED=true
+	```
 
-```bash
-source .env
-```
+## Run locally (zsh)
 
-3. Run the application with Maven:
+1. Load the `.env` values into your current shell (the process must be
+	 started from the same shell):
 
-```bash
-./mvnw spring-boot:run
-```
+	 ```bash
+	 cd isoogle
+	 set -o allexport
+	 source .env
+	 set +o allexport
+	 ```
 
-4. Open at http://localhost:8080 
+2. Start the app:
+
+	 ```bash
+	 ./mvnw spring-boot:run
+	 ```
+
+	 Or build and run the jar:
+
+	 ```bash
+	 ./mvnw -DskipTests package
+	 java -jar target/isoogle-0.0.1-SNAPSHOT.jar
+	 ```
+
+3. Open the UI at:
+
+	 http://localhost:8080
+
 
 
