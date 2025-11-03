@@ -99,7 +99,7 @@
         fetch(`/api/cse?query=${encodeURIComponent(q)}`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('網路回應不是OK');
+                    throw new Error('Network error.');
                 }
                 return response.json();
             })
@@ -108,7 +108,7 @@
                 const container = document.getElementById('cseResults');
                 container.innerHTML = '';
                 if (!data || Object.keys(data).length === 0) {
-                    container.innerText = '沒有找到結果。';
+                    container.innerText = 'None found.';
                     return;
                 }
 
@@ -128,7 +128,7 @@
             })
             .catch(error => {
                 console.error('CSE Error:', error);
-                document.getElementById('cseResults').innerText = '搜尋失敗，請稍後再試。';
+                document.getElementById('cseResults').innerText = 'Search failed, please try again later.';
             });
     }
 
