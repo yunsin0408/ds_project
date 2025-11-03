@@ -1,7 +1,7 @@
 package com.example.isoogle.controller;
 
 import com.example.isoogle.service.GoogleQuery;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,30 +14,18 @@ import java.util.Map;
 @RestController
 public class IsoogleController {
 
-    @Value("${google.cse.enabled:true}")
-    private boolean enabled;
-
-    @Value("${GOOGLE_CSE_APIKEY}")
-    private String apiKey;
-
-    @Value("${GOOGLE_CSE_CX}")
-    private String cx;
+    @Autowired
+    private GoogleQuery googleQuery;
 
     @GetMapping("/api/cse")
     public ResponseEntity<Map<String, String>> search(@RequestParam(name = "query") String query) {
-        if (!enabled) {
-            return ResponseEntity.ok(Collections.emptyMap());
-        }
-
-        if (apiKey == null || apiKey.isEmpty() || cx == null || cx.isEmpty()) {
-            return ResponseEntity.status(400)
-                    .body(Collections.singletonMap("error", "CSE not configured: set google.cse.apiKey and google.cse.cx"));
-        }
-
         try {
-            GoogleQuery gq = new GoogleQuery(query);
-            HashMap<String, String> results = gq.query(query, apiKey, cx);
+            googleQuery.searchKeyword = query;
+            HashMap<String, String> results = googleQuery.query(query);
             return ResponseEntity.ok(results);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(400)
+                    .body(Collections.singletonMap("error", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Collections.emptyMap());

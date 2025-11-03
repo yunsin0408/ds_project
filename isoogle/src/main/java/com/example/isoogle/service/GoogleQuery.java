@@ -6,26 +6,43 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
- public class GoogleQuery 
- {
-     public String searchKeyword;
+@Service
+public class GoogleQuery 
+{
+    @Value("${google.cse.enabled:true}")
+    private boolean enabled;
 
-     public GoogleQuery(String searchKeyword)
-     {
-         this.searchKeyword = searchKeyword;
-     }
+    @Value("${GOOGLE_CSE_APIKEY}")
+    private String apiKey;
+
+    @Value("${GOOGLE_CSE_CX}")
+    private String cx;
+
+    public String searchKeyword;
 
     /**
      * Query Google Custom Search JSON API (CSE) and return title->link map.
      * Uses RestTemplate to call the Google Custom Search API and parses the JSON response.
+     * Returns empty map if CSE is disabled or not configured.
      */
     @SuppressWarnings({"unchecked"})
-    public HashMap<String, String> query(String query, String apiKey, String cx)
+    public HashMap<String, String> query(String query)
     {
         HashMap<String, String> results = new HashMap<>();
+        
+        if (!enabled) {
+            return results;
+        }
+        
+        if (apiKey == null || apiKey.isEmpty() || cx == null || cx.isEmpty()) {
+            throw new IllegalStateException("CSE not configured: set GOOGLE_CSE_APIKEY and GOOGLE_CSE_CX");
+        }
+        
         try {
             String q = java.net.URLEncoder.encode(query, StandardCharsets.UTF_8.name());
             String url = "https://www.googleapis.com/customsearch/v1?key=" + apiKey + "&cx=" + cx + "&num=10&q=" + q;
