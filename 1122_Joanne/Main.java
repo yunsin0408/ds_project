@@ -15,6 +15,7 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
+        
 
         // ----------------------------------------------------
         // 1. Hard-coded URLs (modify freely)
@@ -23,17 +24,17 @@ public class Main {
         urls.add("https://www.iso.org/home.html");
         urls.add("https://en.wikipedia.org/wiki/International_Organization_for_Standardization");
         urls.add("https://www.cyberark.com/what-is/iso/");
-        
+        // Add more…
 
         // ----------------------------------------------------
         // 2. Hard-coded keywords
         // ----------------------------------------------------
         List<String> keywords = new ArrayList<>();
         keywords.add("ISO");
-        keywords.add("standard");
-        keywords.add("sustain");
-        keywords.add("certificate");
-        
+        keywords.add("Standard");
+        keywords.add("Sustain");
+        keywords.add("Certificate");
+        // Add more…
 
         // ----------------------------------------------------
         // 3. Run analysis
@@ -41,14 +42,26 @@ public class Main {
         List<WebPageResult> results = WebAnalyzer.analyze(urls, keywords);
 
         // ----------------------------------------------------
-        // 4. Print results (before ranking)
+        // 4. Results (before ranking)
         // ----------------------------------------------------
-        System.out.println("\n====================================================");
-        System.out.println("          Raw Web Page Analysis Result");
-        System.out.println("====================================================");
+
 
         for (WebPageResult r : results) {
-            System.out.println(r);
+            Map<String, Integer> countMap = r.getWordCountMap();
+
+            int isoCount         = countMap.getOrDefault("ISO", 0);
+            int standardCount    = countMap.getOrDefault("Standard", 0);
+            int sustainCount     = countMap.getOrDefault("Sustain", 0);
+            int certificateCount = countMap.getOrDefault("Certificate", 0);
+
+            // Weighted formula
+            int score =
+                    (isoCount * 4) +
+                    (standardCount * 3) +
+                    (sustainCount * 2) +
+                    (certificateCount * 1);
+
+            r.setScore(score);
         }
 
         // ----------------------------------------------------
@@ -57,12 +70,9 @@ public class Main {
         results.sort(new Comparator<WebPageResult>() {
             @Override
             public int compare(WebPageResult a, WebPageResult b) {
-                return sum(b.getWordCountMap()) - sum(a.getWordCountMap());
+                return b.getScore() - a.getScore();  // descending
             }
 
-            private int sum(Map<String, Integer> map) {
-                return map.values().stream().mapToInt(Integer::intValue).sum();
-            }
         });
 
         // ----------------------------------------------------
@@ -74,12 +84,12 @@ public class Main {
 
         int rank = 1;
         for (WebPageResult r : results) {
-            int totalCount = r.getWordCountMap()
-                    .values().stream().mapToInt(i -> i).sum();
+            
 
             System.out.println(
-                "# " + (rank++) + " | " + r.getUrl() +
-                " | SCORE = " + totalCount +
+                "# " + (rank++) + 
+                " | " + r.getUrl() +
+                " | SCORE = " + r.getScore()+
                 " | Counts = " + r.getWordCountMap()
             );
         }

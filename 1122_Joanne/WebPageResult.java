@@ -12,6 +12,9 @@ public class WebPageResult {
     private String cleanText;
     private Map<String, Integer> wordCountMap;
 
+
+    private int score = 0;
+
     public WebPageResult(String url) {
         this.url = url;
     }
@@ -28,6 +31,11 @@ public class WebPageResult {
 
     public void setWordCountMap(Map<String, Integer> map) {
         this.wordCountMap = map;
+    }
+
+    // ---- score setter ----
+    public void setScore(int score) {
+        this.score = score;
     }
 
     // ------------------ Getters ------------------
@@ -48,11 +56,18 @@ public class WebPageResult {
         return wordCountMap;
     }
 
+    public int getScore() {
+        return score;
+    }
+
     // For debugging / printing to console
     @Override
     public String toString() {
         return "URL: " + url + "\n"
+             + "SCORE: " + score + "\n"
              + "--------------------------------------------------\n"
              + "Word Count: " + wordCountMap + "\n";
     }
+
+   
 }
