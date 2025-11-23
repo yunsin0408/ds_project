@@ -24,6 +24,10 @@ public class Main {
         urls.add("https://www.iso.org/home.html");
         urls.add("https://en.wikipedia.org/wiki/International_Organization_for_Standardization");
         urls.add("https://www.cyberark.com/what-is/iso/");
+        
+        // YouTube URLs (with transcript support)
+        urls.add("https://youtu.be/a4cyMAIyWIQ?si=qxS0dFr3dVrgt_Xh");
+        urls.add("https://youtu.be/Nhlv_3-dQSk?si=qm_Nop7a2pJCkdeP");
         // Add more…
 
         // ----------------------------------------------------

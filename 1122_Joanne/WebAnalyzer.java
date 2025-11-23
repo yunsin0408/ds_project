@@ -30,13 +30,31 @@ public class WebAnalyzer {
 
             WebPageResult pageResult = new WebPageResult(url);
 
-            // Step 1: Fetch HTML
-            String rawHTML = HTMLFetcher.fetchHTML(url);
-            pageResult.setRawHTML(rawHTML);
+            String cleanText = "";
 
-            // Step 2: Clean HTML → plain text
-            String cleanText = TextPreprocessor.cleanHTML(rawHTML);
-            pageResult.setCleanText(cleanText);
+            // Check if URL is a YouTube video
+            if (isYouTubeUrl(url)) {
+                System.out.println("[INFO] Detected YouTube URL - fetching transcript...");
+                
+                // Step 1: Fetch YouTube transcript
+                String transcript = YouTubeTranscriptFetcher.fetchTranscript(url);
+                pageResult.setRawHTML(transcript);  // Store transcript as "raw" content
+                
+                // Step 2: Transcript is already clean text
+                cleanText = transcript;
+                pageResult.setCleanText(cleanText);
+                
+            } else {
+                System.out.println("[INFO] Detected regular webpage - fetching HTML...");
+                
+                // Step 1: Fetch HTML
+                String rawHTML = HTMLFetcher.fetchHTML(url);
+                pageResult.setRawHTML(rawHTML);
+
+                // Step 2: Clean HTML → plain text
+                cleanText = TextPreprocessor.cleanHTML(rawHTML);
+                pageResult.setCleanText(cleanText);
+            }
 
             // Step 3: Count keywords
             Map<String, Integer> wordCountMap = WordCounter.countWords(cleanText, keywords);
@@ -47,5 +65,18 @@ public class WebAnalyzer {
         }
 
         return results;
+    }
+
+    /**
+     * Checks if a URL is a YouTube video URL.
+     * 
+     * @param url The URL to check
+     * @return true if it's a YouTube URL, false otherwise
+     */
+    private static boolean isYouTubeUrl(String url) {
+        return url.contains("youtube.com/watch") || 
+               url.contains("youtu.be/") ||
+               url.contains("youtube.com/embed/") ||
+               url.contains("youtube.com/v/");
     }
 }
