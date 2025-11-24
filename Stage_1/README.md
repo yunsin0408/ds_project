@@ -1,4 +1,3 @@
-
 ## Stage 1 - Complete Version 
 
 This program automatically fetches multiple web pages **and YouTube video transcripts**, calculates text relevance scores based on predefined keywords and weights, and outputs the ranked results.
@@ -48,9 +47,10 @@ This program automatically fetches multiple web pages **and YouTube video transc
 
 1. **Set up Python virtual environment** (first time only):
 
-```bash
-./setup_python.sh
-```
+    | Environment | Command(bash) | Notes |
+    | :--- | :--- | :--- |
+    | **macOS/Linux** | `chmod +x setup_python.sh` <br> `./setup_python.sh` |  |
+    | **Windows (Git Bash)** | `chmod +x setup_python.sh`<br>`cat setup_python.sh \| sed 's/python3/python/g' \| bash`<br>**excexute this line everytime to activate venv:**<br>`source .venv/Scripts/activate` | to fix `python3`(if your python name is `python`) and different filepath of env |
 
 This will:
 - Create a `.venv` virtual environment
@@ -91,10 +91,9 @@ javac YouTubeTranscriptFetcher.java
 java YouTubeTranscriptFetcher
 ```
 
-Or test the Python script directly:
+Or test the Python script directly(Recommended for Windows):
 
 ```bash
-source .venv/bin/activate
 python fetch_youtube_transcript.py "https://youtu.be/a4cyMAIyWIQ"
 deactivate
 ```
@@ -173,13 +172,23 @@ deactivate
 ## Troubleshooting
 
 ### Python virtual environment issues
+
+
+**macOS/Linux:**
 ```bash
 # Remove existing venv and recreate
 rm -rf .venv
 ./setup_python.sh
 ```
 
+**Windows (Git Bash)** 
+```bash
+rm -rf .venv
+cat setup_python.sh \| sed 's/python3/python/g' \| bash
+
+```
 ### Java compilation issues
+This line works on Mac/Linux. On Windows, ensure Java is in PATH.
 ```bash
 # Make sure JAVA_HOME is set
 export JAVA_HOME=$(/usr/libexec/java_home)

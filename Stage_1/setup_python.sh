@@ -39,6 +39,7 @@ echo ""
 echo " Installing dependencies from requirements.txt..."
 source .venv/bin/activate
 
+
 pip install --upgrade pip > /dev/null 2>&1
 pip install -r requirements.txt
 
