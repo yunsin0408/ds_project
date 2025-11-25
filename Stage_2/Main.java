@@ -1,18 +1,22 @@
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Main.java
  * ----------------------------------------------------
- * Stage1 + Stage2 consolidated minimal version.
- *
- * - Manually define URLs & keywords
- * - Call WebAnalyzer
- * - Print results and ranking
+ * Stage 1+2: Site Ranking Version
+ * - Defines target Sites and Keywords
+ * - Calls WebAnalyzer.analyzeSites()
+ * - Calculates Site Score (Main Page + Sub Pages)
+ * - Prints Tree Structure Ranking
+
  */
 public class Main {
+    // Define weights map globally for easy access
+    private static final Map<String, Integer> KEYWORD_WEIGHTS = new HashMap<>();
+
 
     public static void main(String[] args) {
         
@@ -40,62 +44,92 @@ public class Main {
         keywords.add("Certificate");
         // Add more…
 
+        KEYWORD_WEIGHTS.put("ISO", 4);
+        KEYWORD_WEIGHTS.put("Standard", 3);
+        KEYWORD_WEIGHTS.put("Sustain", 2);
+        KEYWORD_WEIGHTS.put("Certificate", 1);
+
+
         // ----------------------------------------------------
         // 3. Run analysis
         // ----------------------------------------------------
-        List<WebPageResult> results = WebAnalyzer.analyze(urls, keywords);
+        System.out.println("Starting Stage 2 Site Analysis...");
+        List<WebPageResult> siteResults = WebAnalyzer.analyzeSites(urls, keywords);
 
         // ----------------------------------------------------
-        // 4. Results (before ranking)
+        // 4. Calculate Scores (Site Score = Root Score + SubPages Score)
         // ----------------------------------------------------
-
-
-        for (WebPageResult r : results) {
-            Map<String, Integer> countMap = r.getWordCountMap();
-
-            int isoCount         = countMap.getOrDefault("ISO", 0);
-            int standardCount    = countMap.getOrDefault("Standard", 0);
-            int sustainCount     = countMap.getOrDefault("Sustain", 0);
-            int certificateCount = countMap.getOrDefault("Certificate", 0);
-
-            // Weighted formula
-            int score =
-                    (isoCount * 4) +
-                    (standardCount * 3) +
-                    (sustainCount * 2) +
-                    (certificateCount * 1);
-
-            r.setScore(score);
+        for (WebPageResult root : siteResults) {
+            // 4.1 Calculate Root Page Score
+            int rootScore = calculatePageScore(root);
+            root.setScore(rootScore);
+            
+            // 4.2 Add Sub-pages Score to Root Score (Accumulate)
+            int totalSiteScore = rootScore;
+            
+            for (WebPageResult child : root.getChildren()) {
+                int childScore = calculatePageScore(child);
+                child.setScore(childScore);
+                totalSiteScore += childScore; // Add child score to total
+            }
+            
+            // Update root score to represent the TOTAL Site Score
+            // Note: In a real tree, you might want to store 'siteScore' separately,
+            // but here we overwrite score for sorting purposes.
+            root.setScore(totalSiteScore); 
         }
 
-        // ----------------------------------------------------
-        // 5. Sort by total keyword count (simple scoring)
-        // ----------------------------------------------------
-        results.sort(new Comparator<WebPageResult>() {
-            @Override
-            public int compare(WebPageResult a, WebPageResult b) {
-                return b.getScore() - a.getScore();  // descending
-            }
-
-        });
 
         // ----------------------------------------------------
-        // 6. Print ranking
+        // 5. Sort by Total Site Score
+        // ----------------------------------------------------
+        siteResults.sort((a, b) -> b.getScore() - a.getScore()); // Descending
+
+
+                // ----------------------------------------------------
+        // 6. Print Tree Structure Ranking
         // ----------------------------------------------------
         System.out.println("\n====================================================");
-        System.out.println("                Ranking Result");
+        System.out.println("                Site Ranking Result");
         System.out.println("====================================================");
 
         int rank = 1;
-        for (WebPageResult r : results) {
+        for (WebPageResult root : siteResults) {
+            System.out.println("Rank #" + (rank++) + " [Total Score: " + root.getScore() + "]");
+            System.out.println("Site: " + root.getUrl());
             
+            // Print Root Details
+            // Only print keyword counts if they are > 0 to keep it clean
+            System.out.print("  └─ Main Page Score: " + calculatePageScore(root)); // Recalculate pure page score for display
+            System.out.println(" | Counts: " + root.getWordCountMap());
 
-            System.out.println(
-                "# " + (rank++) + 
-                " | " + r.getUrl() +
-                " | SCORE = " + r.getScore()+
-                " | Counts = " + r.getWordCountMap()
-            );
+            // Print Children Details
+            List<WebPageResult> children = root.getChildren();
+            if (!children.isEmpty()) {
+                System.out.println("  └─ Sub-pages (" + children.size() + "):");
+                for (WebPageResult child : children) {
+                    System.out.println("      ├─ " + child.getUrl());
+                    System.out.println("      │   Score: " + child.getScore() + " | Counts: " + child.getWordCountMap());
+                }
+            } else {
+                System.out.println("  └─ (No sub-pages analyzed)");
+            }
+            System.out.println("----------------------------------------------------");
         }
+    }
+
+    /**
+     * Helper to calculate score for a single page based on keyword weights.
+     */
+    private static int calculatePageScore(WebPageResult page) {
+        int score = 0;
+        Map<String, Integer> counts = page.getWordCountMap();
+        
+        for (String keyword : KEYWORD_WEIGHTS.keySet()) {
+            int count = counts.getOrDefault(keyword, 0);
+            int weight = KEYWORD_WEIGHTS.get(keyword);
+            score += (count * weight);
+        }
+        return score;
     }
 }

@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,8 +17,11 @@ public class WebPageResult {
 
     private int score = 0;
 
+    private List<WebPageResult> children;
+
     public WebPageResult(String url) {
         this.url = url;
+        this.children=new ArrayList<>();
     }
 
     // ------------------ Setters ------------------
@@ -36,6 +41,10 @@ public class WebPageResult {
     // ---- score setter ----
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public void addChild(WebPageResult child) {
+        this.children.add(child);
     }
 
     // ------------------ Getters ------------------
@@ -59,6 +68,11 @@ public class WebPageResult {
     public int getScore() {
         return score;
     }
+    
+    //Get the list of sub-pages (children).
+    public List<WebPageResult> getChildren() {
+        return children;
+    }
 
     // For debugging / printing to console
     @Override
@@ -66,7 +80,9 @@ public class WebPageResult {
         return "URL: " + url + "\n"
              + "SCORE: " + score + "\n"
              + "--------------------------------------------------\n"
+             +"  Children: " + children.size()+ "\n"
              + "Word Count: " + wordCountMap + "\n";
+             
     }
 
    

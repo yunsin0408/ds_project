@@ -8,6 +8,11 @@
 ./setup_python.sh
 ```
 
+For Windows in git bash(啟動虛擬環境，若尚未創建虛擬環境請參考`README.md`):
+```bash
+source .venv/Scripts/activate
+```
+
 這會創建 `.venv/` 虛擬環境並安裝 `youtube-transcript-api`。
 
 ### 第二步：編譯並運行

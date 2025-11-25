@@ -12,21 +12,60 @@ import java.util.Map;
  * 4. Produces WebPageResult objects
  */
 public class WebAnalyzer {
+    //取最大子網頁數量
+    private static final int MAX_SUB_PAGES = 3;
 
     /**
      * Analyze multiple URLs and return their results.
      *
      * @param urls     List of URLs to fetch
      * @param keywords List of keywords to search
-     * @return List<WebPageResult>
+     * @return List<WebPageResult>(each is a root node containing children)
      */
-    public static List<WebPageResult> analyze(List<String> urls, List<String> keywords) {
+    public static List<WebPageResult> analyzeSites(List<String> urls, List<String> keywords) {
 
         List<WebPageResult> results = new ArrayList<>();
 
         for (String url : urls) {
 
             System.out.println("\n=== Fetching: " + url + " ===");
+            // 1. Analyze the Main Page (Root)
+            WebPageResult rootResult = analyzeSinglePage(url, keywords);
+
+            // 2. If it's a regular website (not YouTube), crawl sub-pages
+            if (!isYouTubeUrl(url)) {
+                System.out.println("  [Info] Scanning for sub-pages...");
+                
+                // Extract links restricted to the same domain
+                List<String> subLinks = HTMLFetcher.extractLinks(rootResult.getRawHTML(), url);
+                
+                int count = 0;
+                for (String subLink : subLinks) {
+                    if (count >= MAX_SUB_PAGES) break; // Limit the number of sub-pages
+                    System.out.println("    -> Fetching sub-page (" + (count + 1) + "/" + MAX_SUB_PAGES + "): " + subLink);
+                    
+                    // Analyze the sub-page
+                    WebPageResult subResult = analyzeSinglePage(subLink, keywords);
+                    
+                    // Add to root's children
+                    rootResult.addChild(subResult);
+                    count++;
+                }
+                System.out.println("  [Info] Finished sub-pages. Found: " + count);
+            }
+
+            results.add(rootResult);
+        }
+
+        return results;
+    }
+
+
+
+
+            //---Helper method to fetch and analyze a single URL (without recursion).
+
+            private static WebPageResult analyzeSinglePage(String url, List<String> keywords) {
 
             WebPageResult pageResult = new WebPageResult(url);
 
@@ -60,11 +99,8 @@ public class WebAnalyzer {
             Map<String, Integer> wordCountMap = WordCounter.countWords(cleanText, keywords);
             pageResult.setWordCountMap(wordCountMap);
 
-            // Store result
-            results.add(pageResult);
-        }
-
-        return results;
+            
+        return pageResult;
     }
 
     /**
