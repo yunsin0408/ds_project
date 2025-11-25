@@ -1,0 +1,23 @@
+# Python Virtual Environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Java Compiled Files
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+
