@@ -107,6 +107,82 @@ public class WebAnalyzer {
         return pageResult;
     }
 
+
+    /**
+     * Analyze multiple URLs from Custom Search JSON API and return results (as SearchResult).
+     *
+     * @param userKeywords User input keywords for Google search
+     * @param keywords List of keywords to search
+     * @param keywordWeights Map of keywords and their weights for scoring
+     * @param numResults Number of Google search results to fetch
+     * @return List<SearchResult> (container for saving results)
+     */
+    public static List<SearchResult> analyzeGoogleRankedSites(String userKeywords, List<String> keywords, Map<String, Integer> keywordWeights, int numResults) throws Exception {
+        
+        // 1. Connect to API and fetch the Urls & Topics
+        GoogleQuery gq = new GoogleQuery(); 
+        String fullQuery = userKeywords + " International Organization of Standardization";
+        HashMap<String, String> urlsToAnalyze = gq.query(fullQuery, numResults); 
+        
+        // Add manual YouTube test URL to ensure YouTubeAPI work correctly
+        // String testYouTubeUrl = "https://youtu.be/Nhlv_3-dQSk?si=qm_Nop7a2pJCkdeP";
+        // if (!urlsToAnalyze.containsValue(testYouTubeUrl)) {
+        //     urlsToAnalyze.put("MANUAL_YOUTUBE_TEST", testYouTubeUrl);
+        // }
+
+        // 2. Analyze the fetched URLs (use the analyzeSites method)
+        List<String> urls = new ArrayList<>(urlsToAnalyze.values());
+        List<WebPageResult> analyzedResults = analyzeSites(urls, keywords);
+        
+
+        // 3. Map results to SearchResult objects and CALCULATE TOTAL SCORE
+        List<SearchResult> searchResults = new ArrayList<>();
+
+        int index = 0;
+        for (Map.Entry<String, String> entry : urlsToAnalyze.entrySet()) {
+            String title = entry.getKey();
+            String url = entry.getValue();
+
+            WebPageResult root = analyzedResults.get(index);
+            
+            // Cal the total score as ParentScore + all RootScore
+            int totalSiteScore = calculatePageScore(root, keywordWeights);
+            
+            for (WebPageResult child : root.getChildren()) {
+                totalSiteScore += calculatePageScore(child, keywordWeights);
+            }
+            
+            SearchResult searchResult = new SearchResult(title, url);
+
+            double finalScore = totalSiteScore; 
+            String cleanText = root.getCleanText(); 
+
+            searchResult.setRankScore(finalScore);
+            searchResult.setContent(cleanText);
+
+            searchResults.add(searchResult);
+            index++;
+        }
+
+        // 4. Sort SearchResults by RankScore descending
+        Collections.sort(searchResults, Comparator.comparingDouble(SearchResult::getRankScore).reversed());
+
+        return searchResults;
+    }
+    /**
+     * Helper to calculate score for a single page based on keyword weights.
+     */
+    private static int calculatePageScore(WebPageResult page, Map<String, Integer> keywordWeights) {
+        int score = 0;
+        Map<String, Integer> counts = page.getWordCountMap(); 
+        
+        for (String keyword : keywordWeights.keySet()) {
+            int count = counts.getOrDefault(keyword, 0);
+            int weight = keywordWeights.get(keyword);
+            score += (count * weight);
+        }
+        return score;
+    }
     /**
      * Checks if a URL is a YouTube video URL.
      * 
