@@ -1,4 +1,4 @@
-## Stage 1 - Complete Version 
+## Stage 1,2,3 - Complete Version 
 
 This program automatically fetches multiple web pages **and YouTube video transcripts**, calculates text relevance scores based on predefined keywords and weights, and outputs the ranked results.
 
@@ -56,7 +56,16 @@ This will:
 - Create a `.venv` virtual environment
 - Install required Python dependencies from `requirements.txt`
 
-2. **Compile all Java files**:
+2. **Adding your own api_key & cx for API**:
+- Adding a file named "GoogleAPI.properties" into folder
+- Save the following informations in the file:
+```bash
+google.api_key="Enter_Your_API_Key_Here"
+google.cx_id="Enter_Your_CX_Here"
+```
+  
+
+3. **Compile all Java files**:
 
 ```bash
 javac *.java
@@ -82,6 +91,12 @@ The program will:
 - Calculate keyword-based relevance scores
 - Rank and display results in the console
 
+Or execute the test program for fetching url from API:
+
+```bash
+java TestGoogleAnalysis
+```
+
 ### Test YouTube Transcript Fetcher Only
 
 To test the YouTube transcript fetcher independently:
@@ -105,6 +120,7 @@ deactivate
 2. `TextPreprocessor` removes HTML tags and extracts plain text
 3. `WordCounter` counts keyword occurrences
 4. `WebAnalyzer` coordinates the process
+5. `GoogleQuery` fetching the url from API
 
 ### For YouTube Videos:
 1. `YouTubeTranscriptFetcher` extracts video ID from URL
@@ -143,12 +159,16 @@ deactivate
 ├── setup_python.sh                  # Setup script for Python venv
 ├── compile_and_run.sh               # Convenience script
 ├── test_youtube.sh                  # Test YouTube fetcher only
+├── GoogleQuery.java                 # Query for API
+├── SearchResult.java                # Container for saving API query result
+├── TestGoogleAnalysis.java          # another Main entry point (for stage3 testing API connection and return results)
+├── GoogleAPI.properties             # Saving api_key & cx for API (manually creating before run) 
 ├── .venv/                           # Python virtual environment (created by setup)
 ├── .gitignore                       # Git ignore file
 └── README.md                        # This file
 ```
 
-## Example Output
+## Example Output (Main.java)
 
 ```
 === Fetching: https://www.iso.org/home.html ===
