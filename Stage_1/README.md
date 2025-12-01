@@ -130,7 +130,7 @@ deactivate
 ## Project Structure
 
 ```
-1122_Joanne/
+Stage_1/
 ├── Main.java                        # Main entry point
 ├── WebAnalyzer.java                 # Analyzes web pages and YouTube videos
 ├── HTMLFetcher.java                 # Fetches HTML content
@@ -141,12 +141,14 @@ deactivate
 ├── fetch_youtube_transcript.py      # Python helper for YouTube API
 ├── requirements.txt                 # Python dependencies
 ├── setup_python.sh                  # Setup script for Python venv
-├── compile_and_run.sh               # Convenience script
+├── compile_and_run.sh               # Convenience script to compile and run
 ├── test_youtube.sh                  # Test YouTube fetcher only
 ├── .venv/                           # Python virtual environment (created by setup)
-├── .gitignore                       # Git ignore file
-└── README.md                        # This file
+├── QUICK_START.md                   # Quick start guide (繁體中文)
+└── README.md                        # This file (detailed documentation)
 ```
+
+**Note:** `.venv/` directory and `*.class` files are excluded by `.gitignore` at project root.
 
 ## Example Output
 
