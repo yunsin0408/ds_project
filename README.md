@@ -21,8 +21,6 @@ isoogle/
     └── CosineSimilarityRanker.java  - TF-based cosine similarity calculation
 ```
 
-### Stage Descriptions
-
 #### Stage 3: Simple Search
 - **Purpose**: Basic Google Custom Search integration with keyword frequency ranking
 - **Features**:
