@@ -35,7 +35,7 @@ isoogle/
   - Round 1: Fetch 5 initial results
   - Extracts top 3 keywords per page using term frequency
   - Filters with co-occurrence analysis 
-  - Merges original (10x weight) and derived keywords (2x weight)
+  - Merges original (10x weight) and derived keywords (5x weight)
   - Round 2: Searches with expanded keyword set
   - Returns top 10 final results
 - **Key Technologies**: Apache Lucene stopword filtering, multilingual tokenization
