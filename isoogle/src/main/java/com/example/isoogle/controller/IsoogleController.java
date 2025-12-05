@@ -20,7 +20,6 @@ public class IsoogleController {
     @GetMapping("/api/cse")
     public ResponseEntity<Map<String, String>> search(@RequestParam(name = "query") String query) {
         try {
-            googleQuery.searchKeyword = query;
             HashMap<String, String> results = googleQuery.query(query);
             return ResponseEntity.ok(results);
         } catch (IllegalStateException e) {
