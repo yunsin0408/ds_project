@@ -90,15 +90,18 @@ cd isoogle
 set -o allexport
 source .env
 set +o allexport
-
+```
 
 2. Start the Stage 5 web application:
 
+```bash
 mvn -pl stage5 spring-boot:run
+```
 
 3. Open the UI at:
 
-	 http://localhost:8080
-
+```bash
+http://localhost:8080
+```
 
 
