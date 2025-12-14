@@ -10,6 +10,7 @@ public class SearchResult {
     private String url;
     private int rankScore;
     private String content;
+    private java.util.List<String> derivedKeywords;
 
     public SearchResult(String siteName, String url) {
         this.siteName = siteName;
@@ -38,5 +39,13 @@ public class SearchResult {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public java.util.List<String> getDerivedKeywords() {
+        return derivedKeywords;
+    }
+
+    public void setDerivedKeywords(java.util.List<String> derivedKeywords) {
+        this.derivedKeywords = derivedKeywords;
     }
 }
