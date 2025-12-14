@@ -1,0 +1,4 @@
+# Python dependencies for YouTube transcript fetching
+youtube-transcript-api>=0.6.0
+
+
