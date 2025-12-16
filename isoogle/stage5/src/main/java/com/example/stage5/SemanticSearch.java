@@ -19,17 +19,71 @@ public class SemanticSearch {
         Map<String, Integer> keywordWeights = new HashMap<>();
 
         // 先拿 Stage4 的結果（裡面會用 Stage3 抓網頁內容）
-        List<SearchResult> results = SearchService.searchAndRank(fullQuery, INITIAL_RESULTS, keywordWeights);
+        List<SearchResult> results = SearchService.searchAndRankWithDerived(fullQuery, INITIAL_RESULTS, keywordWeights);
 
-        // 把結果轉成 JSON-friendly 的 List<Map<...>>
+        // 計算每一筆的 keyword score 與 cosine similarity
+        List<Double> kwScores = new ArrayList<>();
+        List<Double> sims = new ArrayList<>();
         List<Map<String, Object>> out = new ArrayList<>();
 
         for (SearchResult sr : results) {
             String content = (sr.getContent() != null) ? sr.getContent() : "";
-            double sim = CosineSimilarityRanker.calculateSimilarity(fullQuery, content);
+            double sim = 0.0;
+            try {
+                sim = CosineSimilarityRanker.calculateSimilarity(fullQuery, content);
+            } catch (Throwable t) {
+                sim = 0.0;
+            }
 
-            // 這裡先用 siteName 當 title（你們 class 裡確定有 getSiteName）
-            // url 如果你們 SearchResult 沒有 getUrl()，等編譯錯誤出現我再教你換成正確 getter
+            double kw = (double) sr.getRankScore();
+            kwScores.add(kw);
+            sims.add(sim);
+        }
+
+        // Min-max normalize helper
+        java.util.function.BiFunction<List<Double>, Integer, List<Double>> normalize = (list, unused) -> {
+            List<Double> norm = new ArrayList<>();
+            if (list.isEmpty()) return norm;
+            double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
+            for (double v : list) {
+                if (Double.isFinite(v)) {
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+            if (min == Double.MAX_VALUE || max == -Double.MAX_VALUE) {
+                for (int i = 0; i < list.size(); i++) norm.add(0.0);
+                return norm;
+            }
+            if (Double.compare(max, min) == 0) {
+                // If all values are identical and non-zero, give them a uniform non-zero score
+                if (Double.compare(max, 0.0) != 0) {
+                    for (int i = 0; i < list.size(); i++) norm.add(1.0);
+                } else {
+                    for (int i = 0; i < list.size(); i++) norm.add(0.0);
+                }
+                return norm;
+            }
+            for (double v : list) {
+                if (!Double.isFinite(v)) {
+                    norm.add(0.0);
+                } else {
+                    norm.add((v - min) / (max - min));
+                }
+            }
+            return norm;
+        };
+
+        List<Double> kwNorm = normalize.apply(kwScores, 0);
+        List<Double> simNorm = normalize.apply(sims, 0);
+
+        // Combine into hybrid score (60% keyword + 40% similarity) by default
+        double KW_WEIGHT = 0.6;
+        double SIM_WEIGHT = 0.4;
+
+        // Build result rows including explicit numeric score, then sort by that score
+        for (int i = 0; i < results.size(); i++) {
+            SearchResult sr = results.get(i);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("title", sr.getSiteName());
             try {
@@ -38,14 +92,34 @@ public class SemanticSearch {
                 row.put("url", "");
             }
 
-            // mode=keyword 就回傳 keyword 分數；mode=semantic 就回 cosine
+            double keywordComponent = (i < kwNorm.size() ? kwNorm.get(i) : 0.0);
+            double simComponent = (i < simNorm.size() ? simNorm.get(i) : 0.0);
+
+            double hybrid = KW_WEIGHT * keywordComponent + SIM_WEIGHT * simComponent;
+
+            // Determine the numeric score to expose and use for ranking
+            double outScore;
             if ("keyword".equalsIgnoreCase(mode)) {
-                row.put("score", sr.getRankScore());
+                // Normalize raw keyword score into [0,1] if possible for comparability
+                outScore = (i < kwNorm.size() ? kwNorm.get(i) : 0.0);
+            } else if ("semantic".equalsIgnoreCase(mode)) {
+                outScore = (i < simNorm.size() ? simNorm.get(i) : 0.0);
             } else {
-                row.put("score", sim);
+                outScore = hybrid;
             }
 
+            // Put numeric score (Double) and preserve original rankScore for debug if needed
+            row.put("score", Double.valueOf(outScore));
+            row.put("rawKeywordScore", sr.getRankScore());
             out.add(row);
+        }
+
+        // Sort descending by the numeric `score` field we added
+        out.sort(Comparator.comparingDouble(m -> -((Number) m.getOrDefault("score", 0.0)).doubleValue()));
+
+        // Add explicit rank field (1-based) to each result after sorting
+        for (int i = 0; i < out.size(); i++) {
+            out.get(i).put("rank", i + 1);
         }
 
         Map<String, Object> resp = new LinkedHashMap<>();
