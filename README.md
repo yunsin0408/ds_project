@@ -75,28 +75,68 @@ isoogle/
 
 ## Run locally
 
-1. Environment variables (Google Search API)
+### Prerequisites
+- Java 21+
+- Maven 3.6+
 
-This project uses Google Custom Search API in Stage 3–5.
-Set the following environment variables before running:
+### 1. Set up environment variables
 
-- `GOOGLE_CSE_APIKEY`
-- `GOOGLE_CSE_CX`
-  
-2. Set the working directory:
-```bash
-cd "...\isoogle"
-```
-2. Start the Stage 5 web application:
+Create a `.env` file in the project root (same level as `isoogle/`):
 
 ```bash
-.\mvnw.cmd -f stage5\pom.xml -DskipTests clean spring-boot:run
+GOOGLE_CSE_APIKEY="your_api_key"
+GOOGLE_CSE_CX="your_cse_id"
+GOOGLE_CSE_ENABLED=true
 ```
 
-3. Open the UI at:
+### 2. Build the project
 
 ```bash
+cd isoogle
+mvn clean install -DskipTests
+```
+
+### 3. Start the Stage 5 web application
+
+**Mac/Linux:**
+```bash
+cd isoogle
+set -o allexport && source ../.env && set +o allexport
+mvn -pl stage5 spring-boot:run
+```
+
+**Windows (PowerShell):**
+```powershell
+cd isoogle
+Get-Content ..\.env | ForEach-Object { if ($_ -match "^([^=]+)=(.*)$") { [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2]) } }
+mvn -pl stage5 spring-boot:run
+```
+
+**Windows (CMD):**
+```cmd
+cd isoogle
+for /f "tokens=1,2 delims==" %%a in (..\\.env) do set %%a=%%b
+mvn -pl stage5 spring-boot:run
+```
+
+### 4. Open the UI
+
+```
 http://localhost:8080
+```
+
+### Run Stage 1-2 (Depth-Base Weighting Test)
+
+```bash
+cd isoogle/stage1-2
+
+# Set up Python environment (for YouTube transcript)
+python3 -m venv .venv
+source .venv/bin/activate  # Mac/Linux
+pip install -r requirements.txt
+
+# Run the test
+mvn exec:java -Dexec.mainClass="com.example.stage2.Main"
 ```
 
 
