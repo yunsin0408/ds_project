@@ -82,20 +82,15 @@ Set the following environment variables before running:
 
 - `GOOGLE_CSE_APIKEY`
 - `GOOGLE_CSE_CX`
-
-Example (zsh):
-
+  
+2. Set the working directory:
 ```bash
-cd isoogle
-set -o allexport
-source .env
-set +o allexport
+cd "...\isoogle"
 ```
-
 2. Start the Stage 5 web application:
 
 ```bash
-mvn -pl stage5 spring-boot:run
+.\mvnw.cmd -f stage5\pom.xml -DskipTests clean spring-boot:run
 ```
 
 3. Open the UI at:
