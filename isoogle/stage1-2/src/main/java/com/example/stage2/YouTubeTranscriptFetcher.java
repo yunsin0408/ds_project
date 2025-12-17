@@ -1,4 +1,4 @@
-package com.example.stage1;
+package com.example.stage2;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
