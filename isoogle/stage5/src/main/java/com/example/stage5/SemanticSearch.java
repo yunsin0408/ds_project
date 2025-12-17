@@ -19,7 +19,8 @@ public class SemanticSearch {
         Map<String, Integer> keywordWeights = new HashMap<>();
 
         // 先拿 Stage4 的結果（裡面會用 Stage3 抓網頁內容）
-        List<SearchResult> results = SearchService.searchAndRankWithDerived(fullQuery, INITIAL_RESULTS, keywordWeights);
+        List<SearchResult> results = SearchService.searchAndRank(fullQuery, INITIAL_RESULTS, keywordWeights);
+
 
         // 計算每一筆的 keyword score 與 cosine similarity
         List<Double> kwScores = new ArrayList<>();
