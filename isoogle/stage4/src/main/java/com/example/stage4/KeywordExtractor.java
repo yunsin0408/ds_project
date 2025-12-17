@@ -59,10 +59,11 @@ public class KeywordExtractor {
         for (String word : words) {
             
             int minLength = isNonLatin ? 2 : 3;
-            
+            // Filter out noisy HTML entity tokens (e.g., nbsp, oacute) and very short tokens
             if (word.length() > minLength && 
                 !STOPWORDS.contains(word) && 
-                !word.matches(".*\\d.*")) {
+                !word.matches(".*\\d.*") &&
+                !isLikelyHtmlEntityToken(word)) {
                 wordFreq.put(word, wordFreq.getOrDefault(word, 0) + 1);
             }
         }
@@ -148,6 +149,8 @@ public class KeywordExtractor {
                 
                 for (String word : words) {
                     if (word.length() > minLength && !STOPWORDS.contains(word) && !word.matches(".*\\d.*") && !isoOrgTerms.contains(word)) {
+                        // filter html-entity-like tokens
+                        if (isLikelyHtmlEntityToken(word)) continue;
                         // Skip if it's already a context keyword
                         boolean isContextKw = false;
                         for (String contextKw : filteredContext) {
@@ -197,5 +200,16 @@ public class KeywordExtractor {
         }
         
         return new ArrayList<>(allKeywords);
+    }
+
+    private static boolean isLikelyHtmlEntityToken(String token) {
+        if (token == null || token.isEmpty()) return false;
+        String t = token.toLowerCase();
+        // common HTML entity names and fragments seen in output
+        String[] entities = {"nbsp","amp","lt","gt","quot","apos","oacute","rdquo","ldquo","rsquo","ndash","mdash","hellip","cent","pound","eacute","uuml","ouml","mdash"};
+        for (String e : entities) if (t.equals(e)) return true;
+        // tokens that are mostly non-letter or too short
+        if (t.length() <= 2) return true;
+        return false;
     }
 }

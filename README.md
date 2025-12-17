@@ -73,34 +73,35 @@ isoogle/
 	GOOGLE_CSE_ENABLED=true
 	```
 
-## Run locally (zsh)
+## Run locally
 
-1. Load the `.env` values into your current shell (the process must be
-	 started from the same shell):
+1. Environment variables (Google Search API)
 
-	 ```bash
-	 cd isoogle
-	 set -o allexport
-	 source .env
-	 set +o allexport
-	 ```
+This project uses Google Custom Search API in Stage 3–5.
+Set the following environment variables before running:
 
-2. Start the app:
+- `GOOGLE_CSE_APIKEY`
+- `GOOGLE_CSE_CX`
 
-	 ```bash
-	 ./mvnw spring-boot:run
-	 ```
+Example (zsh):
 
-	 Or build and run the jar:
+```bash
+cd isoogle
+set -o allexport
+source .env
+set +o allexport
+```
 
-	 ```bash
-	 ./mvnw -DskipTests package
-	 java -jar target/isoogle-0.0.1-SNAPSHOT.jar
-	 ```
+2. Start the Stage 5 web application:
+
+```bash
+mvn -pl stage5 spring-boot:run
+```
 
 3. Open the UI at:
 
-	 http://localhost:8080
-
+```bash
+http://localhost:8080
+```
 
 

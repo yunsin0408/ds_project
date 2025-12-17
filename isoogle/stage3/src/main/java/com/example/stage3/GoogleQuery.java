@@ -44,8 +44,27 @@ public class GoogleQuery {
     }
 
     public HashMap<String, String> query(String query, int num) throws Exception {
-        // Add "International Organization of Standardization" to the query
-        String enhancedQuery = query + " International Organization of Standardization";
+        // Append the ISO phrase only when appropriate.
+        // Controlled by environment variable `GOOGLE_CSE_APPEND_ISO` (true/false),
+        // or by `SEARCH_BIAS_ISO=true` to force bias toward ISO pages.
+        String enhancedQuery = query == null ? "" : query.trim();
+        boolean appendIso = false;
+        String env = System.getenv("GOOGLE_CSE_APPEND_ISO");
+        String biasIso = System.getenv("SEARCH_BIAS_ISO");
+        if (env != null && (env.equalsIgnoreCase("1") || env.equalsIgnoreCase("true") || env.equalsIgnoreCase("yes"))) {
+            appendIso = true;
+        }
+
+        String low = enhancedQuery.toLowerCase();
+        if (low.contains("iso") || low.contains("standard") || low.contains("international") || low.contains("organization")) {
+            // If the query already mentions ISO-related terms, it's appropriate to append (or it's redundant but harmless)
+            appendIso = true;
+        }
+
+        // If SEARCH_BIAS_ISO is explicitly enabled, force append regardless of other checks
+        if ((biasIso != null && (biasIso.equalsIgnoreCase("1") || biasIso.equalsIgnoreCase("true") || biasIso.equalsIgnoreCase("yes"))) || (appendIso && !low.contains("international organization of standardization"))) {
+            enhancedQuery = enhancedQuery + " International Organization of Standardization";
+        }
         String encoded_keyword = java.net.URLEncoder.encode(enhancedQuery, "UTF-8");
         String urlStr = "https://www.googleapis.com/customsearch/v1?key=" + apiKey + "&cx=" + cx + "&num=" + num + "&q=" + encoded_keyword;
 
