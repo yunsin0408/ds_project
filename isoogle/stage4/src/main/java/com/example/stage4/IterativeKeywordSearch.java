@@ -11,7 +11,7 @@ public class IterativeKeywordSearch {
     private static final int ORIGINAL_WEIGHT = 10;
     private static final int DERIVED_WEIGHT = 5;
     private static final int INITIAL_RESULTS = 5;
-    private static final int FINAL_RESULTS = 10;
+    private static final int FINAL_RESULTS = 5;
     private static final int KEYWORDS_PER_PAGE = 3;
     private static final int MAX_ITERATIONS = 1;
 
@@ -20,21 +20,67 @@ public class IterativeKeywordSearch {
         System.out.print("Enter keywords for Google search (use quotes for phrases): ");
         String input = scanner.nextLine().trim();
         
-        // Parse quoted phrases
-        List<String> userKeywords = parseKeywords(input);
+        IterativeSearchResult result = performIterativeSearch(input);
         
         System.out.println("\n====================================================");
         System.out.println("       STAGE 4: ITERATIVE KEYWORD SEARCH");
         System.out.println("====================================================");
+        
+        System.out.println("\n=== ITERATION 1: Search with Original Keywords ===");
+        System.out.println("Keywords: " + String.join(", ", result.originalKeywords));
+        
+        System.out.println("Found " + result.iteration1Results.size() + " results");
+        
+        System.out.println("\n=== Extracting Keywords from Top Results ===");
+        System.out.println("Derived " + result.derivedKeywords.size() + " new keywords:");
+        System.out.println(String.join(", ", result.derivedKeywords));
+        
+        if (!result.derivedKeywords.isEmpty()) {
+            System.out.println("\n=== ITERATION 2: Search with Original + Derived Keywords ===");
+            System.out.println("Expanded query: " + String.join(", ", result.combinedQuery));
+            System.out.println("Found additional results, total unique: " + result.allResults.size());
+            System.out.println("Added " + (result.allResults.size() - result.iteration1Results.size()) + " new unique results");
+        }
+        
+        System.out.println("\n=== FINAL RANKING: All Discovered Results ===");
+        System.out.println("\n====================================================");
+        System.out.println("   TOP " + Math.min(FINAL_RESULTS, result.finalResults.size()) + " RESULTS (from " + result.finalResults.size() + " total discovered)");
+        System.out.println("====================================================");
+        
+        int rank = 1;
+        for (SearchResult sr : result.finalResults.subList(0, Math.min(FINAL_RESULTS, result.finalResults.size()))) {
+            System.out.println("\nRank #" + (rank++) + " [Score: " + sr.getRankScore() + "]");
+            System.out.println("Site: " + sr.getSiteName());
+            System.out.println("URL: " + sr.getUrl());
+            System.out.println("Preview: " + (sr.getContent() != null ? 
+                             sr.getContent().substring(0, Math.min(200, sr.getContent().length())) + "..." : "No content"));
+        }
+        
+        System.out.println("\n====================================================");
+        System.out.println("Total iterations: " + (result.derivedKeywords.isEmpty() ? 1 : 2));
+        System.out.println("Total unique results discovered: " + result.finalResults.size());
+        System.out.println("Original keywords: " + result.originalKeywords.size());
+        System.out.println("Derived keywords: " + result.derivedKeywords.size());
+        System.out.println("====================================================");
+        
+        scanner.close();
+    }
 
+    /**
+     * Performs the iterative search logic, shared between main() and searchApi().
+     */
+    private static IterativeSearchResult performIterativeSearch(String input) throws Exception {
+        List<String> userKeywords = parseKeywords(input);
+        
+        IterativeSearchResult result = new IterativeSearchResult();
+        result.originalKeywords = userKeywords;
+        result.logs = new ArrayList<>();
+        
         // Track all unique results across iterations
         Map<String, SearchResult> allResults = new LinkedHashMap<>();
         Set<String> allKeywords = new HashSet<>(userKeywords);
         
         // Iteration 1: Search with original keywords
-        System.out.println("\n=== ITERATION 1: Search with Original Keywords ===");
-        System.out.println("Keywords: " + String.join(", ", userKeywords));
-        
         Map<String, Integer> iteration1Weights = new HashMap<>();
         for (String kw : userKeywords) {
             iteration1Weights.put(kw.toLowerCase(), ORIGINAL_WEIGHT);
@@ -43,7 +89,8 @@ public class IterativeKeywordSearch {
         String fullQuery1 = String.join(" ", userKeywords);
         List<SearchResult> results1 = SearchService.searchAndRank(fullQuery1, INITIAL_RESULTS, iteration1Weights);
         
-        System.out.println("Found " + results1.size() + " results");
+        result.iteration1Results = new ArrayList<>(results1);
+        result.logs.add("Iteration 1: Searched with " + userKeywords.size() + " original keywords, found " + results1.size() + " results");
         
         // Store iteration 1 results
         for (SearchResult sr : results1) {
@@ -51,7 +98,6 @@ public class IterativeKeywordSearch {
         }
         
         // Extract keywords from top results
-        System.out.println("\n=== Extracting Keywords from Top Results ===");
         List<String> derivedKeywords = new ArrayList<>();
         
         for (int i = 0; i < Math.min(INITIAL_RESULTS, results1.size()); i++) {
@@ -67,18 +113,13 @@ public class IterativeKeywordSearch {
                     allKeywords.add(keyword.toLowerCase());
                 }
             }
-            
-            System.out.println("  From result #" + (i + 1) + ": " + 
-                             (extracted.isEmpty() ? "none" : String.join(", ", extracted)));
         }
         
-        System.out.println("\nDerived " + derivedKeywords.size() + " new keywords:");
-        System.out.println(String.join(", ", derivedKeywords));
+        result.derivedKeywords = derivedKeywords;
+        result.logs.add("Derived " + derivedKeywords.size() + " new keywords from top results");
         
         // Iteration 2: Search with original + derived keywords
         if (!derivedKeywords.isEmpty()) {
-            System.out.println("\n=== ITERATION 2: Search with Original + Derived Keywords ===");
-            
             Map<String, Integer> iteration2Weights = new HashMap<>();
             
             // Add original keywords with higher weight
@@ -96,53 +137,56 @@ public class IterativeKeywordSearch {
             List<String> combinedQuery = new ArrayList<>(userKeywords);
             combinedQuery.addAll(topDerived);
             
-            System.out.println("Expanded query: " + String.join(", ", combinedQuery));
+            result.combinedQuery = combinedQuery;
             
             String fullQuery2 = String.join(" ", combinedQuery);
             List<SearchResult> results2 = SearchService.searchAndRank(fullQuery2, FINAL_RESULTS, iteration2Weights);
-            
-            System.out.println("Found " + results2.size() + " results");
+            result.logs.add("Iteration 2: Expanded search with " + combinedQuery.size() + " keywords, found " + results2.size() + " results");
             
             // Merge new results
-            int newCount = 0;
             for (SearchResult sr : results2) {
                 if (!allResults.containsKey(sr.getUrl())) {
                     allResults.put(sr.getUrl(), sr);
-                    newCount++;
                 }
             }
-            
-            System.out.println("Added " + newCount + " new unique results");
         }
         
         // Re-rank all collected results
-        System.out.println("\n=== FINAL RANKING: All Discovered Results ===");
-        List<SearchResult> finalResults = new ArrayList<>(allResults.values());
+        result.finalResults = new ArrayList<>(allResults.values());
         
         // Sort by rank score
-        finalResults.sort((a, b) -> b.getRankScore() - a.getRankScore());
+        result.finalResults.sort((a, b) -> b.getRankScore() - a.getRankScore());
         
-        System.out.println("\n====================================================");
-        System.out.println("   TOP " + Math.min(FINAL_RESULTS, finalResults.size()) + " RESULTS (from " + finalResults.size() + " total discovered)");
-        System.out.println("====================================================");
+        result.allResults = new ArrayList<>(allResults.values());
         
-        int rank = 1;
-        for (SearchResult sr : finalResults.subList(0, Math.min(FINAL_RESULTS, finalResults.size()))) {
-            System.out.println("\nRank #" + (rank++) + " [Score: " + sr.getRankScore() + "]");
-            System.out.println("Site: " + sr.getSiteName());
-            System.out.println("URL: " + sr.getUrl());
-            System.out.println("Preview: " + (sr.getContent() != null ? 
-                             sr.getContent().substring(0, Math.min(200, sr.getContent().length())) + "..." : "No content"));
+        return result;
+    }
+
+    /**
+     * REST-friendly API wrapper used by the web controller.
+     */
+    public static java.util.Map<String, Object> searchApi(String input) throws Exception {
+        IterativeSearchResult result = performIterativeSearch(input == null ? "" : input.trim());
+        
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("originalKeywords", result.originalKeywords);
+        resp.put("derivedKeywords", result.derivedKeywords);
+        
+        // Prepare response result list (top FINAL_RESULTS)
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (SearchResult sr : result.finalResults.subList(0, Math.min(FINAL_RESULTS, result.finalResults.size()))) {
+            Map<String, Object> it = new HashMap<>();
+            it.put("siteName", sr.getSiteName());
+            it.put("url", sr.getUrl());
+            it.put("score", sr.getRankScore());
+            it.put("preview", sr.getContent() == null ? "" : (sr.getContent().length() > 200 ? sr.getContent().substring(0,200)+"..." : sr.getContent()));
+            items.add(it);
         }
+
+        resp.put("results", items);
+        resp.put("logs", result.logs);
         
-        System.out.println("\n====================================================");
-        System.out.println("Total iterations: 2");
-        System.out.println("Total unique results discovered: " + finalResults.size());
-        System.out.println("Original keywords: " + userKeywords.size());
-        System.out.println("Derived keywords: " + derivedKeywords.size());
-        System.out.println("====================================================");
-        
-        scanner.close();
+        return resp;
     }
     
     /**
@@ -173,5 +217,18 @@ public class IterativeKeywordSearch {
         }
         
         return keywords;
+    }
+    
+    /**
+     * Helper class to hold iterative search results
+     */
+    private static class IterativeSearchResult {
+        List<String> originalKeywords;
+        List<String> derivedKeywords;
+        List<String> combinedQuery;
+        List<SearchResult> iteration1Results;
+        List<SearchResult> allResults;
+        List<SearchResult> finalResults;
+        List<String> logs;
     }
 }

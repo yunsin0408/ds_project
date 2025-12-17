@@ -9,6 +9,7 @@
         <groupId>com.example</groupId>
         <artifactId>ds-project</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>stage1-2</artifactId>

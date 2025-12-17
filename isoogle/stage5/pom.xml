@@ -9,6 +9,7 @@
         <groupId>com.example</groupId>
         <artifactId>ds-project</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>stage5</artifactId>
@@ -21,12 +22,13 @@
             <artifactId>stage4</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-        </dependency>
-        
+
+	<dependency>
+  	    <groupId>org.json</groupId>
+  	    <artifactId>json</artifactId>
+	    <version>20240303</version>
+	</dependency>
+
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-analysis-common</artifactId>

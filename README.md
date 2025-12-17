@@ -3,104 +3,103 @@
 
 A search engine tailored for your ISO (International Organization of Standardization) needs.
 
-## Project Structure
+## Overview
 
-This project contains multiple stages demonstrating different search approaches:
+Isoogle is a multi-stage search application that provides different search modes optimized for ISO-related queries:
+
+- **Keyword Search**: Uses Google CSE with keyword frequency ranking
+- **Iterative Search**: Extracts and expands keywords for broader results
+- **Semantic Search**: Combines keyword frequency with cosine similarity ranking
+
+The application is built as a Spring Boot web service.
+
+## Project Structure
 
 ```
 isoogle/
-├── stage1-2/          # Basic web analysis and word counting
-├── stage3/            # Google API integration with keyword frequency ranking
-│   └── SimpleSearch.java       - Basic search with keyword ranking
-├── stage4/            # Iterative keyword extraction search
-│   ├── IterativeKeywordSearch.java  - Main iterative search implementation
-│   ├── KeywordExtractor.java        - TF-based keyword extraction with context
-│   └── SearchService.java           - Backend search logic
-└── stage5/            # Semantic search with hybrid ranking
-    ├── SemanticSearch.java          - Main semantic search implementation
-    └── CosineSimilarityRanker.java  - TF-based cosine similarity calculation
+├── src/main/java/com/example/isoogle/
+│   ├── controller/IsoogleController.java  # Main API endpoint
+│   └── IsoogleApplication.java            # Spring Boot app
+├── stage1-2/          # Web analysis utilities
+├── stage3/            # Google CSE integration and frequency ranking
+├── stage4/            # Iterative keyword extraction
+└── stage5/            # Semantic ranking with cosine similarity
 ```
 
-#### Stage 3: Simple Search
-- **Purpose**: Basic Google Custom Search integration with keyword frequency ranking
-- **Features**:
-  - Fetches 10 results from Google API
-  - Crawls up to 2 sublinks per page
-  - Ranks by keyword frequency 
-- **Run**: `cd isoogle/stage3 && mvn compile exec:java -Dexec.mainClass="com.example.stage3.SimpleSearch"`
+## Search Modes
 
-#### Stage 4: Iterative Keyword Search
+### Keyword Search (CSE Mode)
+- **Purpose**: Direct Google Custom Search with keyword frequency ranking
+- **Features**:
+  - Fetches 5 results from Google API
+  - Crawls main page + subpages for content
+  - Ranks by keyword count * weight (ISO biasing)
+- **Ranking**: Frequency-based (`count * weight`)
+  - User query keywords: weight 4
+  - ISO-related terms (e.g., "international", "organization", "standardization"): weight 1
+
+### Iterative Search
 - **Purpose**: Discovers additional relevant pages through keyword extraction
 - **Features**:
-  - Round 1: Fetch 5 initial results
-  - Extracts top 3 keywords per page using term frequency
-  - Filters with co-occurrence analysis 
-  - Merges original (10x weight) and derived keywords (5x weight)
+  - Round 1: Fetch initial results
+  - Extracts top keywords using term frequency
+  - Filters with co-occurrence analysis
   - Round 2: Searches with expanded keyword set
-  - Returns top 10 final results
-- **Key Technologies**: Apache Lucene stopword filtering, multilingual tokenization
-- **Run**: `cd isoogle/stage4 && mvn compile exec:java -Dexec.mainClass="com.example.stage4.IterativeKeywordSearch"`
+  - Returns Top 5 results
+- **Ranking**: Frequency-based (`count * weight`)
+  - Original user keywords: weight 10
+  - Derived keywords: weight 5
+  - ISO-related terms: weight 1
 
-#### Stage 5: Semantic Search
-- **Purpose**: Hybrid ranking combining keyword frequency and semantic similarity
+### Semantic Search
+- **Purpose**: Hybrid ranking combining frequency and semantic similarity
 - **Features**:
-  - Fetches results using Stage 4 backend
-  - Calculates TF-based cosine similarity between query and content
-  - Hybrid score: 60% keyword frequency + 40% cosine similarity
-  - Min-Max normalization for balanced ranking
-- **Key Technologies**: TF vectors, cosine similarity, min-max scaling
-- **Run**: `cd isoogle/stage5 && mvn compile exec:java -Dexec.mainClass="com.example.stage5.SemanticSearch"`
+  - Uses iterative backend for keyword expansion
+  - Calculates TF-based cosine similarity
+  - ISO term boosting in ranking
+- **Ranking**: Hybrid (60% keyword frequency + 40% cosine similarity)
+  - Original user keywords: weight 4
+  - ISO-related terms: weight 1
+  - Cosine similarity: calculated between query and page content
 
-### Technical Features
+## Technical Stack
 
 - **Java 21 LTS**: Modern Java runtime
-- **Apache Lucene 9.11.1**: English stopword filtering
-- **Google Custom Search API**: Programmatic search access
-- **Multilingual Support**: Unicode-aware tokenization for Latin and CJK scripts
-- **Sublink Crawling**: Aggregates content from main page + 3 sublinks
-- **Co-occurrence Filtering**: Context-aware keyword extraction
+- **Spring Boot 3.5**: Web framework
+- **Apache Lucene 9.11**: Text analysis and stopwords
+- **Google Custom Search API**: Programmatic search
+- **Jsoup**: HTML parsing
+- **Maven**: Multi-module build system
 
-## Configuration 
+## Configuration
 
-- Create an `.env` file.
+Create a `.env` file in the project root:
 
-	Example `.env` (local development only):
+```bash
+GOOGLE_CSE_APIKEY="your_api_key"
+GOOGLE_CSE_CX="your_cse_id"
+```
 
-	```bash
-	# .env 
-	GOOGLE_CSE_APIKEY="your_api_key"
-	GOOGLE_CSE_CX="your_cse_id"
-	GOOGLE_CSE_ENABLED=true
-	```
+## Running the Application
 
-## Run locally (zsh)
+1. Ensure Java 21+ is installed
+2. Set up your `.env` file with API credentials
+3. Build and run:
 
-1. Load the `.env` values into your current shell (the process must be
-	 started from the same shell):
+```bash
+cd isoogle
+./mvnw spring-boot:run
+```
 
-	 ```bash
-	 cd isoogle
-	 set -o allexport
-	 source .env
-	 set +o allexport
-	 ```
+4. Open http://localhost:8080 in your browser
 
-2. Start the app:
 
-	 ```bash
-	 ./mvnw spring-boot:run
-	 ```
+## Development
 
-	 Or build and run the jar:
-
-	 ```bash
-	 ./mvnw -DskipTests package
-	 java -jar target/isoogle-0.0.1-SNAPSHOT.jar
-	 ```
-
-3. Open the UI at:
-
-	 http://localhost:8080
+- **Build**: `mvn clean install`
+- **Test**: `mvn test`
+- **Run**: `./mvnw spring-boot:run`
+- **Modules**: Each stage can be run independently for CLI testing
 
 
 

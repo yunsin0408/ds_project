@@ -1,137 +1,447 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!doctype html>
+<html>
 <head>
- <title>isoogle</title>
- <meta charset="UTF-8">
- <style>
-     body {
-         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-         background-color: #f4f6f9;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         height: 100vh;
-         margin: 0;
-     }
-     .container {
-         background-color: #ffffff;
-         padding: 30px 40px;
-         border-radius: 10px;
-         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-         max-width: 400px;
-         width: 100%;
-     }
-     h2 {
-         text-align: center;
-         color: #333333;
-         margin-bottom: 20px;
-     }
-     label {
-         display: block;
-         margin-top: 15px;
-         color: #555555;
-     }
-     input {
-         width: 100%;
-         padding: 12px 15px;
-         margin-top: 5px;
-         border: 1px solid #cccccc;
-         border-radius: 5px;
-         box-sizing: border-box;
-         font-size: 16px;
-     }
-     button {
-         width: 100%;
-         padding: 12px 15px;
-         margin-top: 20px;
-         background-color: #007BFF;
-         border: none;
-         border-radius: 5px;
-         color: #ffffff;
-         font-size: 16px;
-         cursor: pointer;
-         transition: background-color 0.3s ease;
-     }
-     button:hover {
-         background-color: #0056b3;
-     }
-     hr {
-         margin: 30px 0;
-         border: none;
-         border-top: 1px solid #eeeeee;
-     }
-     #apiResult {
-         margin-top: 20px;
-         font-size: 18px;
-         color: #333333;
-         text-align: center;
-     }
- </style>
-</head>
-<body>
-<div class="container">
-
- <p id="apiResult"></p>
-    <hr>
-
-    <h3>ISOOGLE</h3>
-    <form id="cseForm">
-        <label for="cseQuery">搜尋關鍵字:</label>
-        <input type="text" id="cseQuery" name="query" required placeholder="輸入搜尋字詞，例如: Java">
-        <button type="button" onclick="callCseApi()">搜尋</button>
-    </form>
-
-    <div id="cseResults" style="margin-top:18px">
-        <!-- results will be injected here -->
-    </div>
-</div>
-
-<script>
-    function callCseApi() {
-        const q = document.getElementById('cseQuery').value;
-        if (!q) {
-            alert('請輸入搜尋關鍵字。');
-            return;
-        }
-
-        document.getElementById('cseResults').innerHTML = '搜尋中...';
-
-        fetch(`/api/cse?query=${encodeURIComponent(q)}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network error.');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Expecting a JSON object where keys are titles and values are links
-                const container = document.getElementById('cseResults');
-                container.innerHTML = '';
-                if (!data || Object.keys(data).length === 0) {
-                    container.innerText = 'None found.';
-                    return;
-                }
-
-                const ul = document.createElement('ul');
-                ul.style.paddingLeft = '18px';
-                for (const [title, link] of Object.entries(data)) {
-                    const li = document.createElement('li');
-                    const a = document.createElement('a');
-                    a.href = link;
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    a.innerText = title;
-                    li.appendChild(a);
-                    ul.appendChild(li);
-                }
-                container.appendChild(ul);
-            })
-            .catch(error => {
-                console.error('CSE Error:', error);
-                document.getElementById('cseResults').innerText = 'Search failed, please try again later.';
-            });
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISOOGLE</title>
+  <style>
+    :root{
+      --glass: rgba(255,255,255,0.08);
+      --glass2: rgba(255,255,255,0.12);
+      --border: rgba(255,255,255,0.18);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --shadow: 0 20px 60px rgba(0,0,0,0.45);
     }
 
+    *{ box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      overflow-x: hidden;
+
+      /* deep space gradient */
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(88, 120, 255, 0.35), transparent 60%),
+        radial-gradient(900px 600px at 80% 20%, rgba(255, 80, 200, 0.20), transparent 60%),
+        radial-gradient(900px 700px at 50% 90%, rgba(0, 255, 200, 0.10), transparent 55%),
+        linear-gradient(180deg, #060816, #02030a 70%, #000 100%);
+    }
+
+    /* starfield layers */
+    .stars, .stars2, .stars3 {
+      position: fixed;
+      inset: 0;
+      background-repeat: repeat;
+      pointer-events: none;
+      opacity: 0.9;
+      z-index: 0;
+      transform: translateZ(0);
+      animation: drift 120s linear infinite;
+    }
+
+    .stars {
+      background-image:
+        radial-gradient(1px 1px at 10px 20px, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(1px 1px at 40px 60px, rgba(255,255,255,.7) 50%, transparent 51%),
+        radial-gradient(1px 1px at 90px 10px, rgba(255,255,255,.6) 50%, transparent 51%),
+        radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(1px 1px at 160px 30px, rgba(255,255,255,.65) 50%, transparent 51%);
+      background-size: 200px 140px;
+      filter: blur(0.2px);
+    }
+
+    .stars2 {
+      opacity: 0.55;
+      background-image:
+        radial-gradient(1.5px 1.5px at 30px 40px, rgba(255,255,255,.55) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 120px 90px, rgba(255,255,255,.45) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 170px 20px, rgba(255,255,255,.5) 50%, transparent 51%);
+      background-size: 260px 200px;
+      animation-duration: 180s;
+      filter: blur(0.4px);
+    }
+
+    .stars3 {
+      opacity: 0.35;
+      background-image:
+        radial-gradient(2px 2px at 60px 70px, rgba(255,255,255,.35) 50%, transparent 51%),
+        radial-gradient(2px 2px at 180px 40px, rgba(255,255,255,.28) 50%, transparent 51%);
+      background-size: 320px 260px;
+      animation-duration: 240s;
+      filter: blur(0.6px);
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0,0,0); }
+      to   { transform: translate3d(-300px, 200px, 0); }
+    }
+
+    /* main layout */
+    .wrap{
+      position: relative;
+      z-index: 1;
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 36px 16px;
+    }
+
+    .card{
+      width: min(860px, 94vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 26px 22px;
+    }
+
+    .header{
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .title{
+      margin: 0;
+      font-size: clamp(26px, 4vw, 40px);
+      letter-spacing: 0.6px;
+      font-weight: 750;
+      background: linear-gradient(90deg, rgba(255,255,255,0.95), rgba(170,220,255,0.95), rgba(255,170,240,0.92));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 18px rgba(140,180,255,0.18);
+    }
+
+    .subtitle{
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .searchRow{
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .searchBox{
+      width: min(560px, 92vw);
+      display: flex;
+      align-items: center;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 0 0 0 rgba(130,180,255,0.0);
+      transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
+    }
+
+    .searchBox:focus-within{
+      border-color: rgba(170,220,255,0.55);
+      box-shadow: 0 0 0 6px rgba(120,170,255,0.14);
+      transform: translateY(-1px);
+    }
+
+    input{
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 16px;
+      padding: 6px 8px;
+    }
+
+    input::placeholder{ color: rgba(255,255,255,0.55); }
+
+    .btnRow{
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    button{
+      border: 1px solid rgba(255,255,255,0.20);
+      background: rgba(255,255,255,0.10);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+      user-select: none;
+    }
+
+    button:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(170,220,255,0.45);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+    }
+
+    button:active{ transform: translateY(0px) scale(0.99); }
+
+    .status{
+      margin-top: 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      min-height: 18px;
+    }
+
+    .results{
+      margin-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      padding-top: 16px;
+      max-height: min(48vh, 520px);
+      overflow: auto;
+    }
+
+    .resultItem{
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.20);
+      margin-bottom: 10px;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+    .resultItem:hover{
+      transform: translateY(-1px);
+      border-color: rgba(170,220,255,0.32);
+      background: rgba(0,0,0,0.26);
+    }
+
+    .derivedKeywords{
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.20);
+      margin-bottom: 10px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .resultTitle{
+      display: inline-block;
+      color: rgba(210,240,255,0.96);
+      text-decoration: none;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .resultTitle:hover{ text-decoration: underline; }
+
+    .resultUrl{
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.60);
+      word-break: break-all;
+    }
+
+    .resultScore{
+      margin-top: 4px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.95);
+      font-weight: 700;
+    }
+
+    .hint{
+      text-align: center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    /* scrollbar (nice-to-have) */
+    .results::-webkit-scrollbar{ width: 10px; }
+    .results::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,0.18);
+      border-radius: 20px;
+      border: 2px solid rgba(0,0,0,0.25);
+    }
+    .results::-webkit-scrollbar-track{ background: rgba(0,0,0,0.15); }
+
+    @media (max-width: 520px){
+      button{ width: 100%; }
+      .btnRow{ gap: 8px; }
+      .card{ padding: 22px 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stars"></div>
+  <div class="stars2"></div>
+  <div class="stars3"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <h1 class="title">ISOOGLE</h1>
+        <p class="subtitle">Search with Simple Keyword, Iterative Keyword or Semantic Search!</p>
+      </div>
+
+      <div class="searchRow">
+        <div class="searchBox" aria-label="Search box">
+          <input id="q" placeholder='Enter keywords...' />
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button id="btnKeyword">Keyword</button>
+	<button id="btnIterative">Iterative</button>
+        <button id="btnSemantic">Semantic</button>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div id="out" class="results"></div>
+    </div>
+  </div>
+
+<script>
+  let lastMode = "keyword";
+
+  function renderResults(data) {
+    console.log('Rendering results for mode:', data.mode);
+    console.log('Data:', data);
+    const out = document.getElementById("out");
+    out.innerHTML = "";
+
+    // Display derived keywords for iterative search
+    if (data.mode === 'iterative' && data.derivedKeywords && data.derivedKeywords.length > 0) {
+      const derivedDiv = document.createElement("div");
+      derivedDiv.className = "derivedKeywords";
+      derivedDiv.innerHTML = `<strong>Derived Keywords:</strong> ${data.derivedKeywords.join(', ')}`;
+      out.appendChild(derivedDiv);
+    }
+
+    const results = data.results || [];
+    console.log('Number of results:', results.length);
+    if (!results.length) {
+      out.innerHTML += "<div class='hint'>(No results)</div>";
+      return;
+    }
+
+    results.forEach((r, idx) => {
+      console.log('Result', idx, ':', r);
+      const title = r.title || r.siteName || r.name || r.url || `Result #${idx+1}`;
+      const url = r.url || r.link;
+
+      const item = document.createElement("div");
+      item.className = "resultItem";
+
+      if (url) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.className = "resultTitle";
+        a.textContent = title;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        item.appendChild(a);
+
+        const meta = document.createElement("div");
+        meta.className = "resultUrl";
+        meta.textContent = url;
+        item.appendChild(meta);
+
+        if (r.score !== undefined || r.combinedScore !== undefined) {
+          console.log('Adding score for result', idx, ':', r.score || r.combinedScore);
+          const scoreDiv = document.createElement("div");
+          scoreDiv.className = "resultScore";
+          const scoreValue = r.score !== undefined ? r.score : r.combinedScore;
+          scoreDiv.textContent = `Score: ${typeof scoreValue === 'number' ? scoreValue.toFixed(2) : scoreValue}`;
+          item.appendChild(scoreDiv);
+        } else {
+          console.log('No score for result', idx);
+        }
+
+        if (r.keywordScore !== undefined) {
+          const kwDiv = document.createElement("div");
+          kwDiv.className = "resultScore";
+          kwDiv.textContent = `Keyword Score: ${r.keywordScore}`;
+          item.appendChild(kwDiv);
+        }
+
+        if (r.similarity !== undefined) {
+          const simDiv = document.createElement("div");
+          simDiv.className = "resultScore";
+          simDiv.textContent = `Similarity: ${typeof r.similarity === 'number' ? r.similarity.toFixed(4) : r.similarity}`;
+          item.appendChild(simDiv);
+        }
+      } else {
+        const t = document.createElement("div");
+        t.textContent = title;
+        item.appendChild(t);
+      }
+
+      out.appendChild(item);
+    });
+
+    // Display logs 
+    const logs = data.logs || [];
+    console.log('Logs:', logs);
+    if (logs.length > 0) {
+      console.log('Adding logs');
+      const logsDiv = document.createElement("details");
+      logsDiv.setAttribute("open", "");
+      logsDiv.className = "derivedKeywords";
+      logsDiv.innerHTML = `<summary style="cursor: pointer; font-weight: bold;">Logs (${logs.length})</summary><div style="margin-top: 8px;">` + logs.map(log => `• ${log}`).join('<br>') + '</div>';
+      out.appendChild(logsDiv);
+    } else {
+      console.log('No logs to add');
+    }
+  }
+
+  async function runSearch(mode) {
+    lastMode = mode;
+    const q = document.getElementById("q").value.trim();
+    if (!q) return alert("Please enter keywords");
+
+    const status = document.getElementById("status");
+    status.textContent = "Loading...";
+    document.getElementById("out").innerHTML = "";
+
+    const backendMode = mode === "keyword" ? "cse" : mode;
+    const url = `/api/cse?query=${encodeURIComponent(q)}&mode=${encodeURIComponent(backendMode)}`;
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        status.textContent = `Error: ${resp.status}`;
+        return;
+      }
+
+      const data = await resp.json();
+      const count = data.count ?? (data.results?.length ?? 0);
+      status.textContent = `OK · mode=${data.mode || mode} · ${count} results`;
+      renderResults(data);
+    } catch (e) {
+      status.textContent = "Request failed";
+      document.getElementById("out").textContent = String(e);
+    }
+  }
+
+  document.getElementById("btnKeyword").addEventListener("click", () => runSearch("keyword"));
+  document.getElementById("btnSemantic").addEventListener("click", () => runSearch("semantic"));
+  document.getElementById("btnIterative").addEventListener("click", () => runSearch("iterative"));
+
+  // Press Enter to search (use last selected mode)
+  document.getElementById("q").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") runSearch(lastMode);
+  });
 </script>
+
 </body>
 </html>

@@ -22,11 +22,26 @@ public class GoogleQuery {
     private static final Pattern LINK_TITLE_PATTERN = Pattern.compile("\"title\"\\s*:\\s*\"([^\"]*)\"[^\\}]*\"link\"\\s*:\\s*\"([^\"]*)\"");
 
     public GoogleQuery() {
-        // Try environment variables first
-        apiKey = System.getenv("GOOGLE_CSE_APIKEY");
-        cx = System.getenv("GOOGLE_CSE_CX");
+        // load from .env file
+        try {
+            java.io.File envFile = new java.io.File(".env");
+            if (envFile.exists()) {
+                java.util.Properties envProps = new java.util.Properties();
+                envProps.load(new java.io.FileInputStream(envFile));
+                apiKey = envProps.getProperty("GOOGLE_CSE_APIKEY");
+                cx = envProps.getProperty("GOOGLE_CSE_CX");
+            }
+        } catch (Exception e) {
+            // ignore
+        }
         
-        // Fall back to properties file if env vars not set
+        // Fall back to environment variables
+        if (apiKey == null || cx == null) {
+            apiKey = System.getenv("GOOGLE_CSE_APIKEY");
+            cx = System.getenv("GOOGLE_CSE_CX");
+        }
+        
+        // Fall back to properties file if not set
         if (apiKey == null || cx == null) {
             try {
                 Properties prop = new Properties();
@@ -34,12 +49,12 @@ public class GoogleQuery {
                 apiKey = prop.getProperty("google.api_key");
                 cx = prop.getProperty("google.cx_id");
             } catch (IOException e) {
-                throw new RuntimeException("Failed to load Google API properties. Set GOOGLE_CSE_APIKEY and GOOGLE_CSE_CX environment variables or create GoogleAPI.properties");
+                throw new RuntimeException("Failed to load Google API properties. Set GOOGLE_CSE_APIKEY and GOOGLE_CSE_CX in .env, environment variables, or create GoogleAPI.properties");
             }
         }
         
         if (apiKey == null || cx == null) {
-            throw new RuntimeException("Google API credentials not found. Set GOOGLE_CSE_APIKEY and GOOGLE_CSE_CX environment variables.");
+            throw new RuntimeException("Google API credentials not found. Set GOOGLE_CSE_APIKEY and GOOGLE_CSE_CX in .env or environment variables.");
         }
     }
 

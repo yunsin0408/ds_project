@@ -6,9 +6,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.example</groupId>
-        <artifactId>ds-project</artifactId>
-        <version>1.0-SNAPSHOT</version>
+      <groupId>com.example</groupId>
+      <artifactId>ds-project</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>stage4</artifactId>
@@ -19,13 +20,14 @@
         <dependency>
             <groupId>com.example</groupId>
             <artifactId>stage3</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
         
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-        </dependency>
+	<dependency>
+  	    <groupId>org.json</groupId>
+  	    <artifactId>json</artifactId>
+	    <version>20240303</version>
+	</dependency>
         
         <!-- Apache Lucene for stopwords -->
         <dependency>
@@ -34,4 +36,20 @@
             <version>9.11.1</version>
         </dependency>
     </dependencies>
+    
+    <build>
+      <plugins>
+        <plugin>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-maven-plugin</artifactId>
+           <executions>
+             <execution>
+               <id>repackage</id>
+               <phase>none</phase>
+             </execution>
+           </executions>
+        </plugin>
+      </plugins>
+    </build>
+
 </project>

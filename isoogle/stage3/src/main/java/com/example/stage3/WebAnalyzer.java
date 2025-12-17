@@ -124,7 +124,13 @@ public class WebAnalyzer {
             
             SearchResult searchResult = new SearchResult(title, url);
             searchResult.setRankScore(totalSiteScore);
-            searchResult.setContent(aggregatedContent.toString());
+            String agg = aggregatedContent.toString();
+            searchResult.setContent(agg);
+
+            // Log if the aggregated content is empty (fetch failures or no textual content)
+            if (agg == null || agg.trim().isEmpty()) {
+                System.out.println("[WARN] Empty aggregated content for URL: " + url + " (title='" + title + "')");
+            }
 
             searchResults.add(searchResult);
             index++;

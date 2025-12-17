@@ -18,78 +18,21 @@ public class SemanticSearch {
         System.out.print("Enter keywords for Google search (use quotes for phrases): ");
         String input = scanner.nextLine().trim();
         
-        // Parse quoted phrases
-        List<String> userKeywords = parseKeywords(input);
-
-        Map<String, Integer> keywordWeights = new HashMap<>();
-
-        // Add original keywords
-        for (String kw : userKeywords) {
-            keywordWeights.put(kw.toLowerCase(), ORIGINAL_WEIGHT);
-        }
-
+        SemanticSearchResult result = performSemanticSearch(input);
+        
         System.out.println("\n=== Using Original Keywords (Semantic Search Handles Synonyms) ===");
-        System.out.println("Keywords: " + String.join(", ", userKeywords));
+        System.out.println("Keywords: " + String.join(", ", result.userKeywords));
         System.out.println();
-
-        // Call search service
-        String fullQuery = String.join(" ", userKeywords);
-        List<SearchResult> results = SearchService.searchAndRank(fullQuery, INITIAL_RESULTS, keywordWeights);
 
         System.out.println("\n=== Ranking Top " + FINAL_TOP_RESULTS + " Results by Cosine Similarity ===");
         
-        // Calculate cosine similarity on page content
-        List<RankedResult> rankedResults = new ArrayList<>();
-        
-        for (int i = 0; i < Math.min(FINAL_TOP_RESULTS, results.size()); i++) {
-            SearchResult sr = results.get(i);
-            System.out.println("Processing " + (i + 1) + "/" + FINAL_TOP_RESULTS + ": " + sr.getSiteName());
-            
-            // page content cosine similarity 
-            String content = sr.getContent() != null ? sr.getContent() : "";
-            
-            // Calculate cosine similarity between query and full content
-            double similarity = CosineSimilarityRanker.calculateSimilarity(fullQuery, content);
-            
-            rankedResults.add(new RankedResult(sr, content, similarity));
-        }
-        
-        // Min-Max Normalization with (6:4) combination
-        double minSimilarity = rankedResults.stream().mapToDouble(r -> r.similarity).min().orElse(0.0);
-        double maxSimilarity = rankedResults.stream().mapToDouble(r -> r.similarity).max().orElse(1.0);
-        int minKeywordScore = rankedResults.stream().mapToInt(r -> r.result.getRankScore()).min().orElse(0);
-        int maxKeywordScore = rankedResults.stream().mapToInt(r -> r.result.getRankScore()).max().orElse(1);
-        
-        final double KEYWORD_WEIGHT = 0.6;
-        final double SIMILARITY_WEIGHT = 0.4;
-        
-        for (RankedResult rr : rankedResults) {
-            // Normalize both scores to [0, 1]
-            double normalizedSimilarity = (maxSimilarity - minSimilarity) > 0 
-                ? (rr.similarity - minSimilarity) / (maxSimilarity - minSimilarity)
-                : rr.similarity;
-            
-            double normalizedKeyword = (maxKeywordScore - minKeywordScore) > 0
-                ? (double)(rr.result.getRankScore() - minKeywordScore) / (maxKeywordScore - minKeywordScore)
-                : (rr.result.getRankScore() > 0 ? 1.0 : 0.0);
-            
-            // Weighted combination (0-100)
-            rr.combinedScore = 100 * ((KEYWORD_WEIGHT * normalizedKeyword) + (SIMILARITY_WEIGHT * normalizedSimilarity));
-            rr.normalizedSim = normalizedSimilarity;
-            rr.normalizedKw = normalizedKeyword;
-        }
-        
-        // Sort by combined score (descending)
-        rankedResults.sort((a, b) -> Double.compare(b.combinedScore, a.combinedScore));
-
-        // Display final ranked results
         System.out.println("\n====================================================");
-        System.out.println("    Top " + FINAL_TOP_RESULTS + " Results (Ranked by Combined Score)");
-        System.out.println("    Weighting: " + (int)(KEYWORD_WEIGHT*100) + "% Keyword + " + (int)(SIMILARITY_WEIGHT*100) + "% Similarity");
+        System.out.println("    Top " + result.rankedResults.size() + " Results (Ranked by Combined Score)");
+        System.out.println("    Weighting: " + (int)(result.keywordWeight*100) + "% Keyword + " + (int)(result.similarityWeight*100) + "% Similarity");
         System.out.println("====================================================");
         
         int rank = 1;
-        for (RankedResult rr : rankedResults) {
+        for (RankedResult rr : result.rankedResults) {
             System.out.println("Rank #" + (rank++) + " [Score: " + String.format("%.2f", rr.combinedScore) + "/100]");
             System.out.println("  → Keyword: " + rr.result.getRankScore() + " (norm: " + String.format("%.3f", rr.normalizedKw) + ")");
             System.out.println("  → Similarity: " + String.format("%.4f", rr.similarity) + " (norm: " + String.format("%.3f", rr.normalizedSim) + ")");
@@ -100,6 +43,103 @@ public class SemanticSearch {
         }
         
         scanner.close();
+    }
+
+    /**
+     * Performs the semantic search logic, shared between main() and searchApi().
+     */
+    private static SemanticSearchResult performSemanticSearch(String input) throws Exception {
+        List<String> userKeywords = parseKeywords(input);
+        
+        SemanticSearchResult result = new SemanticSearchResult();
+        result.userKeywords = userKeywords;
+        result.logs = new ArrayList<>();
+        result.logs = new ArrayList<>();
+        
+        Map<String, Integer> keywordWeights = new HashMap<>();
+        for (String kw : userKeywords) {
+            keywordWeights.put(kw.toLowerCase(), ORIGINAL_WEIGHT);
+        }
+
+        String fullQuery = String.join(" ", userKeywords);
+        List<SearchResult> results = SearchService.searchAndRank(fullQuery, INITIAL_RESULTS, keywordWeights);
+        result.logs.add("Fetched " + results.size() + " initial results using keyword ranking");
+
+        // Calculate cosine similarity on page content
+        List<RankedResult> rankedResults = new ArrayList<>();
+        
+        for (int i = 0; i < Math.min(FINAL_TOP_RESULTS, results.size()); i++) {
+            SearchResult sr = results.get(i);
+            String content = sr.getContent() != null ? sr.getContent() : "";
+            
+            // Calculate cosine similarity between query and full content
+            double similarity = CosineSimilarityRanker.calculateSimilarity(fullQuery, content);
+            if (Double.isNaN(similarity)) similarity = 0.0;
+            
+            rankedResults.add(new RankedResult(sr, content, similarity));
+        }
+        result.logs.add("Calculated cosine similarity for " + rankedResults.size() + " top results");
+        
+        // Min-Max Normalization with (6:4) combination
+        double minSimilarity = rankedResults.stream().mapToDouble(r -> r.similarity).min().orElse(0.0);
+        double maxSimilarity = rankedResults.stream().mapToDouble(r -> r.similarity).max().orElse(1.0);
+        int minKeywordScore = rankedResults.stream().mapToInt(r -> r.result.getRankScore()).min().orElse(0);
+        int maxKeywordScore = rankedResults.stream().mapToInt(r -> r.result.getRankScore()).max().orElse(1);
+        
+        result.keywordWeight = 0.6;
+        result.similarityWeight = 0.4;
+        result.logs.add("Combined scores with " + (int)(result.keywordWeight*100) + "% keyword frequency + " + (int)(result.similarityWeight*100) + "% cosine similarity");
+        
+        for (RankedResult rr : rankedResults) {
+            // Normalize both scores to [0, 1]
+            double normalizedSimilarity = (maxSimilarity - minSimilarity) > 0 
+                ? (rr.similarity - minSimilarity) / (maxSimilarity - minSimilarity)
+                : 0.5;  // default to 0.5 if all similarities are equal
+            
+            double normalizedKeyword = (maxKeywordScore - minKeywordScore) > 0
+                ? (double)(rr.result.getRankScore() - minKeywordScore) / (maxKeywordScore - minKeywordScore)
+                : 0.5;  // default to 0.5 if all keyword scores are equal
+            
+            // Weighted combination (0-100)
+            rr.combinedScore = 100 * ((result.keywordWeight * normalizedKeyword) + (result.similarityWeight * normalizedSimilarity));
+            rr.normalizedSim = normalizedSimilarity;
+            rr.normalizedKw = normalizedKeyword;
+        }
+        
+        // Sort by combined score (descending)
+        rankedResults.sort((a, b) -> Double.compare(b.combinedScore, a.combinedScore));
+        
+        result.rankedResults = rankedResults;
+        
+        return result;
+    }
+
+    /**
+     * REST-friendly API wrapper used by the web controller.
+     * Returns a Map for JSON serialization.
+     */
+    public static Map<String, Object> searchApi(String query, String mode) throws Exception {
+        SemanticSearchResult result = performSemanticSearch(query == null ? "" : query.trim());
+        
+        List<Map<String, Object>> respResults = new ArrayList<>();
+        
+        for (RankedResult rr : result.rankedResults) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("siteName", rr.result.getSiteName());
+            item.put("url", rr.result.getUrl());
+            item.put("score", rr.combinedScore);
+            item.put("keywordScore", rr.result.getRankScore());
+            item.put("similarity", rr.similarity);
+            item.put("preview", rr.summary == null ? "" : (rr.summary.length() > 300 ? rr.summary.substring(0, 300) + "..." : rr.summary));
+            respResults.add(item);
+        }
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("query", query);
+        resp.put("mode", mode == null ? "semantic" : mode);
+        resp.put("results", respResults);
+        resp.put("logs", result.logs);
+        return resp;
     }
     
     /**
@@ -151,5 +191,16 @@ public class SemanticSearch {
             this.normalizedSim = 0.0;
             this.normalizedKw = 0.0;
         }
+    }
+    
+    /**
+     * Helper class to hold semantic search results
+     */
+    private static class SemanticSearchResult {
+        List<String> userKeywords;
+        List<RankedResult> rankedResults;
+        double keywordWeight;
+        double similarityWeight;
+        List<String> logs;
     }
 }

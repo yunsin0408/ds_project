@@ -11,8 +11,17 @@ import java.util.*;
  */
 public class CosineSimilarityRanker {
     
-    // Use Apache Lucene's comprehensive English stopword list
-    private static final CharArraySet STOPWORDS = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+    // Use Apache Lucene's comprehensive English stopword list with additions
+    private static final CharArraySet STOPWORDS;
+    
+    static {
+        CharArraySet custom = new CharArraySet(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET, true);
+        custom.add("from");
+        custom.add("about");
+        custom.add("into");
+        custom.add("through");
+        STOPWORDS = CharArraySet.unmodifiableSet(custom);
+    }
     
 
     public static double calculateSimilarity(String query, String document) {
@@ -54,7 +63,14 @@ public class CosineSimilarityRanker {
             return 0.0;
         }
         
-        return dotProduct / (queryMagnitude * docMagnitude);
+        double similarity = dotProduct / (queryMagnitude * docMagnitude);
+        
+        // Boost score for documents containing "International Organization of Standardization"
+        if (document.toLowerCase().contains("international organization of standardization")) {
+            similarity += 0.3; // Boost by 0.3 (adjust as needed)
+        }
+        
+        return similarity;
     }
     
     /**
